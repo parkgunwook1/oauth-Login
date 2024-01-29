@@ -27,12 +27,12 @@ public class SpringSecurityConfig {
 
         .csrf(CsrfConfigurer::disable)
                 .authorizeHttpRequests(request -> request // HTTP 요청에 대한 권한을 설정
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll() // FORWARD 타입의 디스패처에 대한 모든 요청 허용
+                        .requestMatchers("/", "/login/controller", "login/model/**").permitAll() //  모든 요청 허용
                         .anyRequest().authenticated()	// 어떠한 요청이라도 인증필요
                 )
                 .formLogin(login -> login	// form 방식 로그인 사용
-                        .defaultSuccessUrl("/wook/home", true)	// 성공 시 dashboard로
-                        .permitAll()	// 대시보드 이동이 막히면 안되므로 얘는 허용
+                        .defaultSuccessUrl("/wook/home", true)	// 성공 시 리액트
+                        .permitAll()	// 리액트 이동이 막히면 안되므로 얘는 허용
                 )
                 .logout(withDefaults());	// 로그아웃은 기본설정으로 (/logout으로 인증해제)
 
