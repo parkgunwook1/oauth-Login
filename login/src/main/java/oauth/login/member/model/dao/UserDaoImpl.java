@@ -1,4 +1,4 @@
-package oauth.login.model.dao;
+package oauth.login.member.model.dao;
 
 import org.springframework.stereotype.Repository;
 
