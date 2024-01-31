@@ -4,14 +4,17 @@ import jakarta.servlet.http.HttpSession;
 import oauth.login.member.model.service.UserService;
 import oauth.login.member.model.vo.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller // spring 빈스캐너가 자동으로 빈객체 만들어준다.
+@RequestMapping("User")
 public class UserController {
 
     // DI(Dependency Injection) -> 객체를 개발자가 생성하는게 아니라, 스프링이 생성한 객체를 주입받아서 사용하느 방식
@@ -20,7 +23,9 @@ public class UserController {
 
     //@Autowired 권장하지 않는 필드방식.
     private UserService userService;
+
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
 
 
     // 생성자 주입방식은 의존성 주입시 권장하는 방식이다.
@@ -30,7 +35,7 @@ public class UserController {
     public UserController() {
 
     }
-    @Autowired
+    @Autowired // 생성자 주입방식 권장.
     public UserController(UserService userService, BCryptPasswordEncoder bCryptPasswordEncoder){
         this.userService = userService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
@@ -39,11 +44,17 @@ public class UserController {
 
     @GetMapping("/")
     public String index() {
-        return "index";
+        return "index.html";
+    }
+
+    @GetMapping("/login")
+    public String login() {
+
+        return "login"; // 로그인 경로
     }
 
     // 로그인
-    @PostMapping(value = "login.me")
+    @PostMapping("/login")
     public ModelAndView loginMember(
             User u,
             HttpSession session,
@@ -61,7 +72,7 @@ public class UserController {
             mv.setViewName("redirect:/");
         }else {
             mv.addObject("errorMsg", "오류발생");
-            mv.setViewName("에러페이지 작성.");
+            mv.setViewName("에러페이지 작성."); //에러페이지이동
         }
         return mv;
     }
@@ -73,6 +84,12 @@ public class UserController {
         session.invalidate();
 
         return "redirect:/"; //main url로 이동
+    }
+
+    @GetMapping("insert")
+    public String insert() {
+
+        return "insert"; // 회원가입 폼 보여주기.
     }
 
     @PostMapping("/insert.me")
@@ -88,11 +105,28 @@ public class UserController {
             u.setPassword(encPwd);
 
             singupMember = userService.singupMember(u);
-
         }
 
+        String url = "";
+
+        if (singupMember > 0) {
+            session.setAttribute("alert", "회원가입성공");
+            url = "redirect:/login";
+        } else {
+            model.addAttribute("errorMsg", "회원가입실패");
+            url = "에러페이지이동"; //에러페이지이동
+        }
+
+        return url;
     }
 
+    // 아이디 중복 검사로직 짜야함.
 
-
+    /* 아이디/ 비밀번호 정규식 처리
+    * 아이디 자리수
+    * 아이디의 특수문자 포함 불가
+    * admin 같은 아이디 사용 불가
+    * 비밀번호 자리수
+    * 비밀번호 특수문자 포함 필수
+    * */
 }
