@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -53,14 +54,16 @@ public class SpringSecurityConfig {
                    .configurationSource(corsConfigurationSource())
                 )
                 .authorizeHttpRequests(request -> request // HTTP 요청에 대한 권한을 설정
-                        .requestMatchers("/", "/login", "insert", "insert.me").permitAll()
+                        .requestMatchers("/", "/user/login", "/user/insert", "/user/insert.me").permitAll()
                         // permitAll() 메소드는 모든 사용자에게 로그인을 하지않아도 접속할 수 있다.
                         // 즉, 게시판과 메인페이지는 사용자가 로그인을 안해도 사용할 수 있다.
 
                         // 마이페이지, 로그인 안했을시 접근을 불가능하게 하려면
                         // .requestMatchers("/mypage").hasRole("ADMIN") 사용하면 admin 경로는 로그인했을때만 사용가능하다.
-                        .anyRequest().authenticated()	// 로그인한 사용자만 접근할 수 있도록 설정.
+//                        .anyRequest().authenticated()	// 로그인한 사용자만 접근할 수 있도록 설정.
                 );
+
+              /* 세션 방식
                http
                         .formLogin(login -> login	// form 방식 로그인 사용
                         .loginPage("/login")                // 사용자가 로그인하지 않은 상태에서 리다이렉트 경로지정
@@ -68,10 +71,32 @@ public class SpringSecurityConfig {
                         .defaultSuccessUrl("/", true)//로그인 성공 후 기본으로 이동할 페이지, tire는 항상 리다이렉트 수행
                         .permitAll()	// 누구나 접근 허용
                 )
-                .logout(withDefaults());	// 로그아웃은 기본설정으로 (/logout으로 인증해제)
+                         .logout(withDefaults());	// 로그아웃은 기본설정으로 (/logout으로 인증해제)
+                */
+
+
+
+            //-------------------------------- jwt 방식 ----------------------------------
 
                 http
-                        .csrf((auth) -> auth.disable());
+                        .csrf((auth) -> auth.disable()); // 세션 로그인은 세션을 관리해야함으로 csrf 방어를 해야하는데 jwt 방식은 stateless 임으로 관리 안해줘도 된다.
+                                                         // 즉, 서버는 클라이언트 기억하지 않으며 오직 클라이언트의 요청에 대한 응답만 준다.
+                http
+                        .formLogin((auth) -> auth.disable());   // JWT는 보통 HTTP Header나 url의 파라미터에 토큰을 포함시켜 전달하므로, form 기반의 로그인 방식 사용 X
+                 http
+                        .httpBasic((auth) -> auth.disable());
+
+                //경로별 인가 작업
+                http
+                .authorizeHttpRequests((auth) -> auth
+                        .requestMatchers("/jwt/login", "/jwt", "/jwt/join").permitAll() // login, join , jwt 인증 받지 않고 허용
+                        .requestMatchers("/jwt/admin").hasRole("ADMIN")     // admin 역할을 가진 사용자만 허용
+                        .anyRequest().authenticated());
+
+                //세션 설정
+                http                                          // 세션 비활성화
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }
