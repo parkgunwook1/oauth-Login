@@ -25,3 +25,31 @@ Spring Security 에서는 회원가입시 비밀번호를 반드시 암호화하
 세션 로그인일 경우 서버에서 데이터를 저장하고 클라이언트에게 응답하는 방식이다.
 JWT 토큰 로그인 방식은 서버에 저장하지 않고, JWTUtil에서 토큰을 생성해 클라이언트에게 인가 해주는 방식이다.
 jwt 토큰 발행중에 동일한 아이디가 있더라도 토큰을 만들고 반환후에 세션은 소멸된다.
+
+
+스프링 시큐리티 필터 동작 원리
+스프링 시큐리티는 클라이언트의 요청이 여러개의 필터를 거쳐 DispatcherServlet(Controller)으로 향하는 중간 필터에서 요청을 가로챈 후 검증(인증/인가)을
+진행합니다.
+
+- 클라이언트 요청 -> 서블릿 필터 -> 서블릿(컨트롤러)
+
+클라이언트 요청이오면 서블릿 컨테이너(톰캣)에 존재하는 필터 체인에 DelegatingFilter를 등록한 뒤 모든 요청을 가로챈다.
+
+서블릿 필터 체인의 DelegatingFilter -> Security 필터 체인(내부 처리 후) -> 서블릿 필터 체인의 DelegatingFilter
+가로챈 요청은 SecurityFilterChain에서 처리 후 상황에 따른 거부, 리다렉션, 서블릿으로 요청 전달을 진행한다.
+
+SecurityFilterChain의 필터 목록과 순서는 엄청 많다. 그중에서
+Form 로그인 방식에서 UsernamePasswordAuthenticationFilter이 있다.
+
+Form 로그인 방식에서는 클라이어트단이 username과 password를 전송한 뒤 Security 필터를 통과하는데 UsernamePasswordAuthenticationFilter 필터에서 회원
+검증을 시작한다.
+(회원 검증의 경우 UsernamePasswordAuthenticationFilter가 호출한 AuthenticationManager를 통해 진행하며 DB에서 조회한 데이터를 통해 받아온다.)
+
+JWT 프로젝트는 SecurityConfig에서 formLogin 방식을 disable 했기 때문에 기본적으로 활성화 되어 있는 해당 필터는 동작하지 않는다.
+따라서 로그인을 진행하기 위해서 필터를 커스텀하여 등록해야 한다.
+
+JWT 로그인 로직 구현 목표
+- 아이디, 비밀번호 검증을 위한 커스텀 필터 작성
+- DB에 저장되어 있는 회원 정보를 기반으로 검증할 로직 작성
+- 로그인 성공시 JWT를 반환할 success 핸들러 생성
+- 커스텀 필터 SecurityConfig 등록
