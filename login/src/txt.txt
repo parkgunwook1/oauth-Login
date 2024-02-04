@@ -53,3 +53,28 @@ JWT 로그인 로직 구현 목표
 - DB에 저장되어 있는 회원 정보를 기반으로 검증할 로직 작성
 - 로그인 성공시 JWT를 반환할 success 핸들러 생성
 - 커스텀 필터 SecurityConfig 등록
+
+
+JWT 발급과 검증
+- 로그인시 -> 성공 -> JWT 발급
+- 접근시 -> JWT 검증
+
+JWT에 관해 발급과 검증을 담당할 클래스가 필요하다. 따라서 JWTUtil이라는 클래스를 생성하여 jwt 발급, 검증 메소드를 작성해줘야 한다.
+JWT는 Header.Payload.Signature 구조로 이루어져있다.
+
+Header
+    - JWT임을 명시
+    - 사용된 암호화 알고리즘
+Payload
+    - 정보
+Signature
+    - 암호화알고리즘(BASE64(Header)+(BASE64(Payload)) + 암호화키)
+
+jwt 특징은 내부 정보를 단순 base64 방식으로 인코딩할기 때문에 외부에서 쉽게 디코딩 할 수 있다.
+외부에서 열람해도 되는 정보를 담아야하며, 토큰 자체의 발급처를 확인하기 위해서 사용한다.
+
+
+jwt 검증 필터
+스프링 시큐리티 filter chain에 요청에 담긴 jwt를 검증하기 위한 커스텀 필터를 등록해야 한다.
+해당 필터를 통해 요청 헤더 authorization 키에 jwt가 존재하는 경우 jwt를 검증하고 강제로 SecurityContextHolder에 세션을 생성한다.
+이 세션은 statless 상태로 관리되기 대문에 해당 요청이 끝나면 소멸된다.

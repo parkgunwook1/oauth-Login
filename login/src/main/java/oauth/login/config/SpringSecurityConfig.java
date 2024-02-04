@@ -1,6 +1,8 @@
 package oauth.login.config;
 
 
+import oauth.login.jwt.JWTFilter;
+import oauth.login.jwt.JWTUtil;
 import oauth.login.jwt.LoginFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,10 +26,12 @@ public class SpringSecurityConfig {
 
     //AuthenticationManager가 인자로 받을 AuthenticationConfiguraion 객체 생성자 주입
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final JWTUtil jwtUtil;
 
     // 생성자 주입
-    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration) {
+    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil) {
         this.authenticationConfiguration = authenticationConfiguration;
+        this.jwtUtil = jwtUtil;
     }
 
 
@@ -111,22 +115,31 @@ public class SpringSecurityConfig {
 
                 //세션 설정
                 http                                          // 세션 비활성화
-                .sessionManagement((session) -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                     .sessionManagement((session) -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                // JWTFilter 등록
+                 http
+                     .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
             //필터 추가 LoginFilter()는 인자를 받음 (AuthenticationManager() 메소드에 authenticationConfiguration 객체를 넣어야 함) 따라서 등록 필요
                 http
-                        .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration)), UsernamePasswordAuthenticationFilter.class);
+                        .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration),jwtUtil), UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
 
 
 
+    /*
+    *  cors 는 프론트앤드와 백엔드 연동 설정해주는 방법.
+    *
+    * */
     @Bean  //cors 설정 모든 헤더에 대해 허용
     protected CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration corsConfiguration = new CorsConfiguration();
+
         corsConfiguration.addAllowedOrigin("*");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
