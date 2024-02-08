@@ -18,7 +18,7 @@ public class CustomOAuth2User implements OAuth2User {
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public Map<String, Object> getAttributes() { // 리소스로부터 넘어오는 데이터 값들
         return null;
     }
 
